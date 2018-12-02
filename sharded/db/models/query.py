@@ -19,9 +19,10 @@ from django.db.models import query
 from sharded.db import shards
 from sharded.exceptions import ShardCouldNotBeDetermined
 
+
 class ShardedQuerySetMixin(object):
     connections = shards
-    
+
     def iterator(self):
         try:
             self._db = self.db
@@ -29,25 +30,30 @@ class ShardedQuerySetMixin(object):
         except ShardCouldNotBeDetermined:
             return chain(*[self._clone(_db=cnxn).iterator() for cnxn in self.connections])
 
+
 class ShardedQuerySet(ShardedQuerySetMixin, query.QuerySet):
     def _filter_or_exclude(self, negate, *args, **kwargs):
         self._add_hints(**kwargs)
         return super(ShardedQuerySet, self)._filter_or_exclude(negate, *args, **kwargs)
-    
+
     def count(self):
         if self._result_cache is not None:
             return super(ShardedQuerySet, self).count()
         else:
             return sum([self.query.get_count(using=cnxn) for cnxn in self.connections])
-    
+
     def values(self, *fields):
-        return super(ShardedQuerySet, self).values(*fields)._clone(klass=ShardedValuesQuerySet, setup=True, _fields=fields)
-    
+        return super(ShardedQuerySet, self).values(*fields)._clone(klass=ShardedValuesQuerySet, setup=True,
+                                                                   _fields=fields)
+
     def values_list(self, *fields, **kwargs):
-        return super(ShardedQuerySet, self).values_list(*fields, **kwargs)._clone(klass=ShardedValuesListQuerySet, setup=True, _fields=fields)
+        return super(ShardedQuerySet, self).values_list(*fields, **kwargs)._clone(klass=ShardedValuesListQuerySet,
+                                                                                  setup=True, _fields=fields)
+
 
 class ShardedValuesQuerySet(ShardedQuerySetMixin, query.ValuesQuerySet):
     pass
+
 
 class ShardedValuesListQuerySet(ShardedQuerySetMixin, query.ValuesListQuerySet):
     pass

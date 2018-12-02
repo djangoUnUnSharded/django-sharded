@@ -81,35 +81,34 @@ Quick start
 
 7. Run `python manage.py updateshard <1..255> --capacity <in_bytes>` to keep track of available capacity in the shard
 
-8. Use `ShardedModel` as base for models that require sharding. Related models will automatically be included in the same shard and the ForeignKey field will also automatically use a big integer column::
+8. Use `ShardedModel` as base for models that require sharding. Related models will automatically be included in the same bucket and the ForeignKey field will also automatically use a big integer column::
 
-    from sharded.db import models
-    from sharded.models import Shard
-    
-    class HelloManager(models.ShardedManager):
-        use_for_related_fields = True
-    
-        def create(self, **kwargs):
-            if not self._db:
-                self._db = str(Shard.objects.most_free_shard())
-            return super(HelloManager, self).create(**kwargs)
+```python
+from sharded.db import models
+from sharded.models import Shard
 
-    class Hello(models.ShardedModel):
-        a_random_field = models.IntegerField()
-        
-        objects = HelloManager()
+class ArtistManager(models.ShardedManager):
+    use_for_related_fields = True
+
+    def create(self, **kwargs):
+        if not self._db:
+            self._db = str(Shard.objects.most_free_shard())
+        return super(ArtistManager, self).create(**kwargs)
+
+class Artist(models.ShardedModel):
+    followers = models.IntegerField()
     
-    class Foo(models.Model):
-        hello = models.ForeignKey(Hello)
-    
-    class Bar(models.Model):
-        hello = models.OneToOneField(Hello)
-    
-    class Baz(models.ShardedModel):
-        hello = models.ForeignKey(Hello)
-    
-    class Herp(models.Model): #Unsharded model
-        derp = models.CharField(max_length=8)
+    objects = ArtistManager()
+
+class Album(models.Model):
+    artist = models.ForeignKey(Artist)
+
+class Song(models.Model):
+    Artist = models.OneToOneField(Artist)
+
+class Herp(models.Model): #Unsharded / regular model
+    derp = models.CharField(max_length=8)
+```
 
 9. Run `python manage.py makemigrations` and then, `python manage.py migrate --all` to apply migrations across all shards
 

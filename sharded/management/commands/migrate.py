@@ -18,6 +18,7 @@ from django.core.management.commands import migrate
 from django.core.management import call_command
 from sharded.db import connections, DEFAULT_DB_ALIAS, shards
 
+
 class Command(migrate.Command):
     help = "Updates database schema on default DB and shards. Manages both apps with migrations and those without."
     
@@ -25,14 +26,21 @@ class Command(migrate.Command):
         super(Command, self).add_arguments(parser)
         parser.add_argument("--all-shards", action="store_true", default=False, help="Migrate all the sharded databases.")
         parser.add_argument("--no-initshard", action="store_true", default=False, help="Do not call initshard.")
+        parser.add_argument("--buckets", action="store_true", default=DEFAULT_BUCKET_NUM, help="Do not call initshard.")
     
     def handle(self, **options):
+
+        # TODO: where is this option coming from ?
+
         db = options.pop('database')
         migrate_all = options.pop('all_shards')
         no_initshard = options.pop('no_initshard')
         if db == DEFAULT_DB_ALIAS and migrate_all == True:
             cnxns = sorted(shards) + ['default',]
             for cnxn in cnxns:
+
+                # TODO: What is self.style.MIGRATE HEADING ?
+
                 self.stdout.write(self.style.MIGRATE_HEADING("Migrating '" + cnxn + "' database"))
                 if not no_initshard:
                     call_command('initshard', database=cnxn)

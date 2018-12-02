@@ -28,8 +28,14 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("shard_id", type=int, nargs='?', help="Shard ID to use for the database. Max possible shards is 255.")
         parser.add_argument("--epoch", type=long, default=self.min_epoch_40bit, help="Offset value for custom epoch. Must be greater than or equal to %d to set bit 41 to zero." % self.min_epoch_40bit)
+
+        # TODO: Remove PostgreSQL dependency
+
         parser.add_argument("--cache", type=int, default=7, help="The optional clause CACHE for PostgreSQL CREATE SEQUENCE. Defaults to 7.")
         parser.add_argument("--replace", action="store_true", default=False, help="Replace sequences/functions if they exists.")
+
+        # TODO: What does this mean ?
+
         parser.add_argument("--database", type=str, default="default", help="Nominates a database to synchronize. Defaults to the \"default\" database.")
     
     def handle(self, *args, **options):
@@ -41,6 +47,9 @@ class Command(BaseCommand):
         cache = options["cache"]
         replace = options["replace"]
         if shard_id is None:
+
+            # TODO: Where is
+
             options["shard_id"] = shard_id = self.connection.shard_id
         if shard_id < 0 or shard_id > 255:
             raise CommandError("shard_id cannot be negative or larger than unsigned 8-bit integer")
