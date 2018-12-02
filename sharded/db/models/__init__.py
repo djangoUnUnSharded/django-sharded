@@ -20,12 +20,14 @@ from sharded.db.models.manager import ShardedManager
 from sharded.db.models.fields import Sharded32Field, Sharded64Field, ForeignKey, OneToOneField, OneToOneOrNoneField
 from sharded.db.models.query import ShardedQuerySet, ShardedValuesQuerySet, ShardedValuesListQuerySet
 
+
 class ShardedModelMixin(object):
-    def __int__(self): # define integer casting action
+    def __int__(self):  # define integer casting action
         return self.id
     
     def cursor(self): # what is this?
         return connections[self._state.db].cursor()
+
 
 class Sharded32Model(ShardedModelMixin, Model):
     id = Sharded32Field()
@@ -36,6 +38,7 @@ class Sharded32Model(ShardedModelMixin, Model):
     class Meta:
         abstract = True
 
+
 class Sharded64Model(ShardedModelMixin, Model):
     id = Sharded64Field()
     
@@ -43,5 +46,6 @@ class Sharded64Model(ShardedModelMixin, Model):
     
     class Meta:
         abstract = True
+
 
 ShardedModel = Sharded64Model

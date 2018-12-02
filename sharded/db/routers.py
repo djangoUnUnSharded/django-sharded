@@ -20,6 +20,7 @@ from django.db.models.fields.related import RelatedField, ForeignObjectRel
 from sharded.db import models, SHARDED_DB_PREFIX
 from sharded.exceptions import ShardCouldNotBeDetermined
 
+
 class ShardedRouter(object):
     def __init__(self):
         self.sharded_tables = set()

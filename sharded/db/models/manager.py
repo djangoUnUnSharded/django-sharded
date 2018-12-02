@@ -17,6 +17,7 @@ limitations under the License.
 from django.db.models.manager import BaseManager
 from sharded.db.models.query import ShardedQuerySet
 
+
 class BaseShardedManager(BaseManager):
     def __iter__(self):
         return self.all().__iter__()
@@ -24,6 +25,7 @@ class BaseShardedManager(BaseManager):
     @classmethod
     def from_queryset(cls, queryset_class, class_name=None):
         return super(BaseShardedManager, cls).from_queryset(queryset_class, class_name=class_name)
+
 
 class ShardedManager(BaseShardedManager.from_queryset(ShardedQuerySet)):
     use_for_related_fields = True
