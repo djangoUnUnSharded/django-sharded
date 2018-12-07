@@ -61,7 +61,7 @@ class Command(BaseCommand):
         init_shard32 = [
             "DROP SEQUENCE IF EXISTS shard_id32_seq;",
             "CREATE SEQUENCE shard_id32_seq MAXVALUE 8388607;",
-            "CREATE OR REPLACE FUNCTION next_id32(seq_id int = nextval('shard_id32_seq'::regclass), OUT id int) AS $$ "
+            "CREATE OR REPLACE FUNCTION next_id32(seq_id int = nextval('shard_id32_seq'::regclass), OUT id int) AS $$ " # 
             "DECLARE "
             "    shard_id int := %(shard_id)d; "
             "BEGIN "
@@ -104,15 +104,15 @@ class Command(BaseCommand):
             self.stdout.write(status.get(self.init_shard(None if replace else name, init, **options),"FAILED"))
     
     @transaction.atomic
-    def init_shard(self, if_exists, init_sql, **kwargs):
+    def init_shard(self, id_name, init_sql, **kwargs):
         cursor = self.connection.cursor()
-        if isinstance(if_exists, six.string_types):
-            cursor.execute("SELECT COUNT(*) FROM pg_proc WHERE proname=%s", [if_exists])
+        if isinstance(id_name, six.string_types):
+            cursor.execute("SELECT COUNT(*) FROM pg_proc WHERE proname=%s", [id_name])
             if cursor.fetchone()[0]:
                 return 1
             else:
-                if_exists = None
-        if not if_exists:
+                id_name = None
+        if not id_name:
             for sql in init_sql:
                 sql = sql % kwargs
                 if self.verbosity >= 2:

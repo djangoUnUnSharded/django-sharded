@@ -23,14 +23,28 @@ from sharded.db.models import ShardedModel, Sharded64Model, Sharded32Model
 from sharded.exceptions import ShardCouldNotBeDetermined
 
 NUM_BUCKETS = getattr(settings, 'NUM_BUCKETS', 2048)
+BUCKET_DICT = {}
+SHARD_DICT = {}
 
-# TODO: Where to use this function
+
+def create_bucket_dict():
+    for bucket in range(0, NUM_BUCKETS):
+        shard = bucket % len(shards)
+        BUCKET_DICT[bucket] = (shard, -1)
+        if SHARD_DICT[shard] is not None:
+            SHARD_DICT[shard].append(bucket)
+        else:
+            SHARD_DICT[shard] = [bucket]
+
+
 def bucket_to_shard(bucket_id):
     if bucket_id >= NUM_BUCKETS or bucket_id < 0:
         raise Exception("Bucket out of bounds %d" % bucket_id)
-    num = bucket_id % len(shards) # TODO: fixit
-    db = SHARDED_DB_PREFIX + str(num)
-    return db
+    (num_old, num_new) = BUCKET_DICT[bucket_id]
+    db = SHARDED_DB_PREFIX + str(num_old)
+    new_db = SHARDED_DB_PREFIX + str(num_new)
+    return db, new_db
+
 
 class ShardedRouter(object):
     def __init__(self):
@@ -38,11 +52,13 @@ class ShardedRouter(object):
         len_sharded_tables = -1
         while len_sharded_tables != len(self.sharded_tables):
             len_sharded_tables = len(self.sharded_tables)
-            for model in filter(lambda m: m._meta.db_table not in self.sharded_tables, apps.get_models(include_auto_created=True, include_deferred=True)):
+            for model in filter(lambda m: m._meta.db_table not in self.sharded_tables,
+                                apps.get_models(include_auto_created=True, include_deferred=True)):
                 for field in model._meta.get_fields(include_hidden=True):
-                    if isinstance(field, (models.Sharded32Field,models.Sharded64Field)) or \
-                    (isinstance(field, (RelatedField,ForeignObjectRel)) and \
-                    (isinstance(field.related_model, six.string_types)==False and field.related_model._meta.db_table in self.sharded_tables)):
+                    if isinstance(field, (models.Sharded32Field, models.Sharded64Field)) or \
+                            (isinstance(field, (RelatedField, ForeignObjectRel)) and \
+                             (isinstance(field.related_model,
+                                         six.string_types) == False and field.related_model._meta.db_table in self.sharded_tables)):
                         self.sharded_tables.add(model._meta.db_table)
 
     # TODO: Understand this
@@ -76,10 +92,16 @@ class ShardedRouter(object):
             shard = bucket_to_shard(bucket_id)
             return shard
         return None
-    
+
     def db_for_write(self, model, **hints):
-        return self.db_for_read(model, **hints)
-    
+        if isinstance(model, (Sharded32Model, Sharded64Model)):
+            # map bucket to shard
+            bucket_id = model.id
+            shard, new_shard = bucket_to_shard(bucket_id)
+            model.save(using=new_shard)
+            return shard
+        return None
+
     def allow_relation(self, obj1, obj2, **hints):
         if obj1._meta.db_table in self.sharded_tables and obj2._meta.db_table in self.sharded_tables:
             return True
