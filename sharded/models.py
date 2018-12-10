@@ -32,3 +32,9 @@ class Shard(models.Model):
     
     def __str__(self):
         return SHARDED_DB_PREFIX + ("%03d" % self.id)
+
+class BucketCounter(models.Model):
+    id = models.IntegerField(primary_key=True)
+    counter = models.IntegerField(default=0)
+
+    objects = models.Manager

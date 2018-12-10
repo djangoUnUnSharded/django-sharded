@@ -16,9 +16,23 @@ limitations under the License.
 
 from django.db.models import *
 from django.db import connections
+from sharded.db.routers import NUM_BUCKETS
+from django.core.exceptions import ObjectDoesNotExist
 from sharded.db.models.manager import ShardedManager
-from sharded.db.models.fields import Sharded32Field, Sharded64Field, ForeignKey, OneToOneField, OneToOneOrNoneField
 from sharded.db.models.query import ShardedQuerySet, ShardedValuesQuerySet, ShardedValuesListQuerySet
+from django.db import transaction
+from sharded.models import BucketCounter
+from time import time
+from random import randint
+
+
+def gen_id():
+    id = int((round(time() * 1000))) << (64 - 41)
+    bucket_id = randint(0, NUM_BUCKETS - 1)
+    id |= bucket_id << (64 - 41 - 13)
+    id |= get_counter(bucket_id)
+
+    return {id: id, bucket_id: bucket_id}
 
 
 class ShardedModelMixin(object):
@@ -29,23 +43,32 @@ class ShardedModelMixin(object):
         return connections[self._state.db].cursor()
 
 
-class Sharded32Model(ShardedModelMixin, Model):
-    id = Sharded32Field()
-    
-    objects = ShardedManager()
-
-    # what this?
-    class Meta:
-        abstract = True
-
 
 class Sharded64Model(ShardedModelMixin, Model):
-    id = Sharded64Field()
+    id = BigIntegerField(primary_key=True, editable=False, default=gen_id()['id'])
+    bucket_id = BigIntegerField(editable=False, default=gen_id()['bucket_id'])
     
     objects = ShardedManager()
-    
+
     class Meta:
         abstract = True
+
+
+
+@transaction.atomic
+def get_counter(bucket_id):
+    try:
+        buck = BucketCounter.objects.get(id=bucket_id)
+    except ObjectDoesNotExist:
+        buck = BucketCounter(id=bucket_id, counter=0)
+
+    buck.counter = F('counter') + 1
+
+    if buck.counter > 1023:
+        buck.counter = F('counter') % 1024
+
+    buck.save()
+    return buck.counter
 
 
 ShardedModel = Sharded64Model

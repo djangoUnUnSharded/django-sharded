@@ -52,8 +52,7 @@ class Command(BaseCommand):
         if cache > self.max_cache:
             raise CommandError("sequence cache cannot be greater than %d" % self.max_cache)
 
-        # TODO: REMOVE POSTGRESQL SPECIFIC INTEGRATIONS
-        init_shard32 = [
+        pg_init_shard32 = [
 
             "DROP SEQUENCE IF EXISTS shard_id32_seq;",
             "CREATE SEQUENCE shard_id32_seq MAXVALUE 8388607;",
@@ -70,7 +69,7 @@ class Command(BaseCommand):
             "END; "
             "$$ LANGUAGE PLPGSQL;",
         ]
-        init_shard64 = [
+        pg_init_shard64 = [
             "DROP SEQUENCE IF EXISTS shard_id64_seq;",
             "CREATE SEQUENCE shard_id64_seq MAXVALUE 65535 CACHE %(cache)d CYCLE;",
             "CREATE OR REPLACE FUNCTION next_id64(ts timestamp with time zone = clock_timestamp(), seq_id bigint = nextval('shard_id64_seq'::regclass), OUT id bigint) AS $$ "
@@ -95,7 +94,7 @@ class Command(BaseCommand):
             "$$ LANGUAGE PLPGSQL;",
         ]
         status = {0: "OK", 1: "EXISTS"}
-        for name, init in [('shard_id32', init_shard32), ('shard_id64', init_shard64)]:
+        for name, init in [('shard_id32', pg_init_shard32), ('shard_id64', pg_init_shard64)]:
             self.stdout.write("Initializing '%s'... " % name, ending='')
             self.stdout.write(status.get(self.init_shard(None if replace else name, init, **options), "FAILED"))
     
