@@ -20,28 +20,37 @@ from sharded.db.models.manager import ShardedManager
 from sharded.db.models.fields import Sharded32Field, Sharded64Field, ForeignKey, OneToOneField, OneToOneOrNoneField
 from sharded.db.models.query import ShardedQuerySet, ShardedValuesQuerySet, ShardedValuesListQuerySet
 
+
 class ShardedModelMixin(object):
     def __int__(self): # define integer casting action
         return self.id
-    
-    def cursor(self): # what is this?
+
+    def cursor(self):
         return connections[self._state.db].cursor()
+
 
 class Sharded32Model(ShardedModelMixin, Model):
     id = Sharded32Field()
-    
+
     objects = ShardedManager()
 
-    # what this?
     class Meta:
         abstract = True
+
 
 class Sharded64Model(ShardedModelMixin, Model):
-    id = Sharded64Field(primary_key=True)
-    
+    id = Sharded64Field()
+
     objects = ShardedManager()
-    
+
     class Meta:
         abstract = True
+
+
+class MigrationCommandModel(Model):
+    id = DateTimeField(auto_now=True)
+    command = TextField(primary_key=True)
+    complete = BooleanField(default=False)
+
 
 ShardedModel = Sharded64Model
