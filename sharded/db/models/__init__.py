@@ -37,7 +37,7 @@ class Sharded32Model(ShardedModelMixin, Model):
         abstract = True
 
 class Sharded64Model(ShardedModelMixin, Model):
-    id = Sharded64Field()
+    id = Sharded64Field(primary_key=True)
     
     objects = ShardedManager()
     
