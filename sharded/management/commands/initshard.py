@@ -18,8 +18,8 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction, connections
 from django.utils import six
 
-#shard_id32: 8-bits seq id MSB, 8-bits shard id, 16-bits seq id LSB
-#shard_id64: 40-bits timestamp, 8-bits shard id, 16-bits seq id
+# shard_id32: 8-bits seq id MSB, 8-bits shard id, 16-bits seq id LSB
+# shard_id64: 40-bits timestamp, 8-bits shard id, 16-bits seq id
 
 class Command(BaseCommand):
     min_epoch_40bit = 1099511627776
@@ -29,7 +29,7 @@ class Command(BaseCommand):
         parser.add_argument("shard_id", type=int, nargs='?', help="Shard ID to use for the database. Max possible shards is 255.")
         parser.add_argument("--epoch", type=long, default=self.min_epoch_40bit, help="Offset value for custom epoch. Must be greater than or equal to %d to set bit 41 to zero." % self.min_epoch_40bit)
 
-        # TODO: Remove PostgreSQL dependency
+        # TODO: REMOVE POSTGRESQL DEPENDENCY
 
         parser.add_argument("--cache", type=int, default=7, help="The optional clause CACHE for PostgreSQL CREATE SEQUENCE. Defaults to 7.")
         parser.add_argument("--replace", action="store_true", default=False, help="Replace sequences/functions if they exists.")
@@ -57,8 +57,9 @@ class Command(BaseCommand):
             raise CommandError("epoch cannot be less than %lu" % self.min_epoch_40bit)
         if cache > self.max_cache:
             raise CommandError("sequence cache cannot be greater than %d" % self.max_cache)
-        
-        init_shard32 = [
+
+        pg_init_shard32 = [
+
             "DROP SEQUENCE IF EXISTS shard_id32_seq;",
             "CREATE SEQUENCE shard_id32_seq MAXVALUE 8388607;",
             "CREATE OR REPLACE FUNCTION next_id32(seq_id int = nextval('shard_id32_seq'::regclass), OUT id int) AS $$ " # 
@@ -74,7 +75,7 @@ class Command(BaseCommand):
             "END; "
             "$$ LANGUAGE PLPGSQL;",
         ]
-        init_shard64 = [
+        pg_init_shard64 = [
             "DROP SEQUENCE IF EXISTS shard_id64_seq;",
             "CREATE SEQUENCE shard_id64_seq MAXVALUE 65535 CACHE %(cache)d CYCLE;",
             "CREATE OR REPLACE FUNCTION next_id64(ts timestamp with time zone = clock_timestamp(), seq_id bigint = nextval('shard_id64_seq'::regclass), OUT id bigint) AS $$ "
@@ -98,10 +99,10 @@ class Command(BaseCommand):
             "END; "
             "$$ LANGUAGE PLPGSQL;",
         ]
-        status = {0:"OK", 1:"EXISTS"}
-        for name,init in [('shard_id32',init_shard32), ('shard_id64',init_shard64)]:
+        status = {0: "OK", 1: "EXISTS"}
+        for name, init in [('shard_id32', pg_init_shard32), ('shard_id64', pg_init_shard64)]:
             self.stdout.write("Initializing '%s'... " % name, ending='')
-            self.stdout.write(status.get(self.init_shard(None if replace else name, init, **options),"FAILED"))
+            self.stdout.write(status.get(self.init_shard(None if replace else name, init, **options), "FAILED"))
     
     @transaction.atomic
     def init_shard(self, id_name, init_sql, **kwargs):

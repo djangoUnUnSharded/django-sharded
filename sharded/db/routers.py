@@ -48,20 +48,22 @@ def bucket_to_shard(bucket_id):
 
 class ShardedRouter(object):
     def __init__(self):
-        self.sharded_tables = set()
+        self.sharded_tables = set() # set of sharded tables
         len_sharded_tables = -1
         while len_sharded_tables != len(self.sharded_tables):
             len_sharded_tables = len(self.sharded_tables)
-            for model in filter(lambda m: m._meta.db_table not in self.sharded_tables,
-                                apps.get_models(include_auto_created=True, include_deferred=True)):
-                for field in model._meta.get_fields(include_hidden=True):
-                    if isinstance(field, (models.Sharded32Field, models.Sharded64Field)) or \
-                            (isinstance(field, (RelatedField, ForeignObjectRel)) and \
-                             (isinstance(field.related_model,
-                                         six.string_types) == False and field.related_model._meta.db_table in self.sharded_tables)):
-                        self.sharded_tables.add(model._meta.db_table)
+            # for every model that is NOT in the set of sharded tables
+            for model in filter(lambda m: m._meta.db_table not in self.sharded_tables, apps.get_models(include_auto_created=True, include_deferred=True)):
+                # for every field that is in those models
+                # for field in model._meta.get_fields(include_hidden=True):
+                # if those fields are an instance of the sharded fields
+                if isinstance(model, models.Sharded64Model) or \
+                    (isinstance(model, (RelatedField,ForeignObjectRel)) and \
+                     (isinstance(model.related_model, six.string_types)==False and model.related_model._meta.db_table
+                      in self.sharded_tables)):
+                    self.sharded_tables.add(model._meta.db_table)
 
-    # TODO: Understand this
+
     def db_for_read(self, model, **hints):
 
         # Remove db check
@@ -72,32 +74,31 @@ class ShardedRouter(object):
         #         if obj._state.db:
         #             return obj._state.db
         #         else:
-        #             shard_id = getattr(obj, pk, None) or hints.get(pk, None)
         #     else:
+        #             shard_id = getattr(obj, pk, None) or hints.get(pk, None)
         #         shard_id = hints.get(pk, None)
+        #             shard_id = shards.pop()
         #     if not shard_id:
+        #         raise ShardCouldNotBeDetermined('Could not determine shard for "%s.%s" model' % (model._meta.app_label, model._meta.model_name))
         #         shards = set([int(hint) for hint in hints.values() if isinstance(hint, (models.Sharded32Model,models.Sharded64Model))])
         #         num_shards = len(shards)
         #         if num_shards == 1:
-        #             shard_id = shards.pop()
         #         elif num_shards > 1:
         #             raise ShardCouldNotBeDetermined('Multiple possible shards for "%s.%s" model -- identified %s!' % (model._meta.app_label, model._meta.model_name, num_shards))
         #     if not shard_id:
-        #         raise ShardCouldNotBeDetermined('Could not determine shard for "%s.%s" model' % (model._meta.app_label, model._meta.model_name))
         #     return SHARDED_DB_PREFIX + ('%03d' % ((long(shard_id) >> 16) & 255))
-
         if isinstance(model, (Sharded32Model, Sharded64Model)):
             # map bucket to shard
             bucket_id = model.id
             shard = bucket_to_shard(bucket_id)
             return shard
         return None
-
     def db_for_write(self, model, **hints):
+
         if isinstance(model, (Sharded32Model, Sharded64Model)):
-            # map bucket to shard
             bucket_id = model.id
             shard, new_shard = bucket_to_shard(bucket_id)
+            # map bucket to shard
             model.save(using=new_shard)
             return shard
         return None
