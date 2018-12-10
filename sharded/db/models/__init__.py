@@ -47,10 +47,4 @@ class Sharded64Model(ShardedModelMixin, Model):
         abstract = True
 
 
-class MigrationCommandModel(Model):
-    id = DateTimeField(auto_now=True)
-    command = TextField(primary_key=True)
-    complete = BooleanField(default=False)
-
-
 ShardedModel = Sharded64Model

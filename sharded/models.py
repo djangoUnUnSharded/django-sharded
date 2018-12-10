@@ -15,20 +15,12 @@ limitations under the License.
 """
 
 from django.db import models
+from django.db.models import *
 from django.utils.encoding import python_2_unicode_compatible
 from sharded.db import SHARDED_DB_PREFIX
 
-class ShardManager(models.Manager):
-    def most_free_shard(self):
-        return self.annotate(free=models.F('capacity') - models.F('usage')).order_by('free','id').first()
 
-@python_2_unicode_compatible
-class Shard(models.Model):
-    id = models.SmallIntegerField(primary_key=True)
-    usage = models.BigIntegerField(default=0)
-    capacity = models.BigIntegerField(default=0)
-    
-    objects = ShardManager()
-    
-    def __str__(self):
-        return SHARDED_DB_PREFIX + ("%03d" % self.id)
+class MigrationCommandModel(Model):
+    id = DateTimeField(auto_now=True)
+    command = TextField(primary_key=True)
+    complete = BooleanField(default=False)
