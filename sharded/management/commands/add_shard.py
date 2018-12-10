@@ -15,19 +15,23 @@ limitations under the License.
 """
 
 from django.core.management.commands import migrate
-from django.core.management import call_command
+from django.core.management import call_command, BaseCommand
 from sharded.db import connections, DEFAULT_DB_ALIAS, shards
-from sharded.db.models import MigrationCommandModel
 from sharded.db.routers import SHARD_DICT, bucket_to_shard, BUCKET_DICT
 
 
-class Command(migrate.Command):
-    help = "Updates database schema on default DB and shards. Manages both apps with migrations and those without."
+class Command(BaseCommand):
+    help = "Adds new shard to shard pool"
 
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
-        parser.add_argument("--config-path", action="store_true", default=False, help="Path to db config module")
-        # parser.add_argument("--no-initshard", action="store_true", default=False, help="Do not call initshard.")
+
+        parser.add_argument("--alias", action="store", help="DB alias", required=True)
+        parser.add_argument("--name", action="store", help="DB name", required=True)
+        parser.add_argument("--user", action="store", help="DB user", required=True)
+        parser.add_argument("--password", action="store", help="DB password")
+        parser.add_argument("--host", action="store", help="DB host", required=True)
+        parser.add_argument("--port", action="store", help="DB port")
 
     def handle(self, **options):
         path = options["config_path"]
