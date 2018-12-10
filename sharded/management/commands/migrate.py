@@ -29,17 +29,12 @@ class Command(migrate.Command):
         parser.add_argument("--buckets", action="store_true", default=DEFAULT_BUCKET_NUM, help="Do not call initshard.")
     
     def handle(self, **options):
-
-        # TODO: where is this option coming from ?
-
         db = options.pop('database')
         migrate_all = options.pop('all_shards')
         no_initshard = options.pop('no_initshard')
         if db == DEFAULT_DB_ALIAS and migrate_all == True:
             cnxns = sorted(shards) + ['default',]
             for cnxn in cnxns:
-
-                # TODO: What is self.style.MIGRATE HEADING ?
 
                 self.stdout.write(self.style.MIGRATE_HEADING("Migrating '" + cnxn + "' database"))
                 if not no_initshard:
