@@ -35,7 +35,7 @@ Quick start
 
     #NOTE: Django Sharded accesses each shard using the name format '%s%03d' % (SHARDED_DB_PREFIX, n)
     DATABASES['shard_001'] = {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'sharded.db.backends.postgresql_psycopg2',
         'NAME': 'shard',
         'USER': 'prjdbuser',
         'PASSWORD': 'supersecretpassword',
@@ -43,7 +43,7 @@ Quick start
         'PORT': '5432',
     }
     DATABASES['shard_002'] = {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'sharded.db.backends.postgresql_psycopg2',
         'NAME': 'shard_002',
         'USER': 'prjdbuser',
         'PASSWORD': 'supersecretpassword',
@@ -51,7 +51,7 @@ Quick start
         'PORT': '5432',
     }
     DATABASES['shard_003'] = {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'sharded.db.backends.postgresql_psycopg2',
         'NAME': 'shard_003',
         'USER': 'prjdbuser',
         'PASSWORD': 'supersecretpassword',
@@ -59,7 +59,7 @@ Quick start
         'PORT': '5432',
     }
     DATABASES['shard_004'] = {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'sharded.db.backends.postgresql_psycopg2',
         'NAME': 'shard',
         'USER': 'prjdbuser',
         'PASSWORD': 'supersecretpassword',
