@@ -22,6 +22,7 @@ import re
 from django.db.backends.postgresql_psycopg2.base import *
 from django.db.backends.postgresql_psycopg2.base import DatabaseSchemaEditor as PostgresDatabaseSchemaEditor
 from django.db.backends.postgresql_psycopg2.base import DatabaseWrapper as PostgresDatabaseWrapper
+print("sharded.db.backends.postgresql_psycopg2: imports complete")
 
 
 
@@ -31,6 +32,7 @@ class DatabaseSchemaEditor(PostgresDatabaseSchemaEditor):
     return: true if field is an instance of the Sharded32Field or Sharded64Field
     """
     def skip_default(self, field):
+        print("sharded.db.backends.postgresql_psycopg2: skipped default")
         from sharded.db import models
         return isinstance(field, (models.Sharded32Field, models.Sharded64Field))
 
@@ -46,6 +48,7 @@ class DatabaseWrapper(PostgresDatabaseWrapper):
     """
     @cached_property
     def shard_id(self):
+        print("sharded.db.backends.postgresql_psycopg2: getting shard_id")
         from sharded.db import SHARDED_DB_PREFIX
         # regex matches self.alias for shard_id
         shard_id = re.match(SHARDED_DB_PREFIX + "(\d{1,3})", self.alias) # what is self.alias

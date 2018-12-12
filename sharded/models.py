@@ -25,8 +25,4 @@ class MigrationCommandModel(Model):
     command = TextField(primary_key=True)
     complete = BooleanField(default=False)
 
-class BucketCounter(models.Model):
-    id = models.IntegerField(primary_key=True)
-    counter = models.IntegerField(default=0)
 
-    objects = models.Manager

@@ -24,6 +24,7 @@ class ShardedQuerySetMixin(object):
     connections = shards
 
     def iterator(self):
+        print("sharded.db.models.query: iterating over ShardedQuerySetMixin")
         try:
             self._db = self.db
             return super(ShardedQuerySetMixin, self).iterator()
@@ -33,20 +34,24 @@ class ShardedQuerySetMixin(object):
 
 class ShardedQuerySet(ShardedQuerySetMixin, query.QuerySet):
     def _filter_or_exclude(self, negate, *args, **kwargs):
+        print("sharded.db.models.query.ShardedQuerySet: filter or exclude: ", self)
         self._add_hints(**kwargs)
         return super(ShardedQuerySet, self)._filter_or_exclude(negate, *args, **kwargs)
 
     def count(self):
+        print("sharded.db.models.query.ShardedQuerySet: count", self)
         if self._result_cache is not None:
             return super(ShardedQuerySet, self).count()
         else:
             return sum([self.query.get_count(using=cnxn) for cnxn in self.connections])
 
     def values(self, *fields):
+        print("sharded.db.models.query.ShardedQuerySet: values", self, fields)
         return super(ShardedQuerySet, self).values(*fields)._clone(klass=ShardedValuesQuerySet, setup=True,
                                                                    _fields=fields)
 
     def values_list(self, *fields, **kwargs):
+        print("sharded.db.models.query.ShardedQuerySet: values_list", self, fields)
         return super(ShardedQuerySet, self).values_list(*fields, **kwargs)._clone(klass=ShardedValuesListQuerySet,
                                                                                   setup=True, _fields=fields)
 

@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
+'''
 from django.contrib import admin
 from django.contrib.admin.utils import get_limit_choices_to_from_path
 from django.core.exceptions import ImproperlyConfigured
@@ -55,3 +55,4 @@ class ShardAdmin(admin.ModelAdmin):
     list_display = ('id', 'usage', 'capacity')
 
 admin.site.register(models.Shard, ShardAdmin)
+'''
