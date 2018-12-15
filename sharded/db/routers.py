@@ -30,7 +30,7 @@ print(NUM_BUCKETS, BUCKET_DICT, SHARD_DICT)
 
 
 def create_bucket_dict():
-    print("sharded.db.routers: #create_bucket_dict: NUM_BUCKETS, shards = ", NUM_BUCKETS, shards)
+    for bucket in range(1, NUM_BUCKETS):
     for bucket in range(0, NUM_BUCKETS):
         shard = bucket % len(shards) + 1
         print("sharded.db.router: shard, buck =", shard, bucket)
@@ -106,7 +106,10 @@ class ShardedRouter(object):
         if model._meta.db_table not in self.sharded_tables:
             return None
         if Sharded64Model in model.mro():
-            inst = getattr(hints, 'instance', False)
+            try:
+                inst = hints['instance']
+            except:
+                return None
             bucket_id = getattr(inst, 'bucket_id', False)
             print("sharded.db.routers: #for_write: bucket_id", bucket_id)
             shard, new_shard = bucket_to_shard(bucket_id)
@@ -134,7 +137,7 @@ class ShardedRouter(object):
                     shard, new_shard = bucket_to_shard(bucket_id)
                     if new_shard >= 0: inst.save(using=SHARDED_DB_PREFIX +
                                                      str(new_shard).zfill(3))
-                    return SHARDED_DB_PREFIX +  str(shard).zfill(3)
+                    print("Saving %s into %s, %s" % (str(inst), shard, new_shard))
 
         return None
 
