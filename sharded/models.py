@@ -26,3 +26,10 @@ class MigrationCommandModel(Model):
     complete = BooleanField(default=False)
 
 
+class BucketCounter(models.Model):
+    id = models.IntegerField(primary_key=True)
+    counter = models.IntegerField(default=0)
+
+    #    objects = models.Manager()
+    def save(self, *args, **kwargs):
+        super(BucketCounter, self).save(*args, **kwargs)

@@ -32,16 +32,6 @@ print("sharded.db.models.init: imports complete, NUM_BUCKETS=", NUM_BUCKETS)
 bucket_counts = {}
 
 
-class BucketCounter(models.Model):
-    id = models.IntegerField(primary_key=True)
-    counter = models.IntegerField(default=0)
-
-    #    objects = models.Manager()
-    def save(self, *args, **kwargs):
-        print("sharded.db.models.init: BucketCounter #save: self, args, kwargs = ", self, args, kwargs)
-        super(BucketCounter, self).save(*args, **kwargs)
-
-
 def get_counter(bucket_id):
     print("sharded.db.models.init: get_counter, bucketid: ", bucket_id)
     #    try:
@@ -85,17 +75,13 @@ def gen_id():
 
 class ShardedModelMixin(object):
     def __int__(self):  # define integer casting action
-        print("sharded.db.models.init: ShardedModelMixin to_int")
-        print(self)
         return self.id
 
     def cursor(self):
-        print("sharded.db.models.init: ShardedModelMixin: getting cursor")
         return connections[self._state.db].cursor()
 
 
 class Sharded64Model(ShardedModelMixin, Model):
-    print("sharded.db.models.init: Sharded64Model initializing")
     id = BigIntegerField(primary_key=True, editable=False)
     bucket_id = BigIntegerField(editable=False)
 
