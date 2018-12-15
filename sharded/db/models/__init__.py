@@ -21,63 +21,67 @@ from django.core.exceptions import ObjectDoesNotExist
 from sharded.db.models.manager import ShardedManager
 from sharded.db.models.query import ShardedQuerySet, ShardedValuesQuerySet, ShardedValuesListQuerySet
 from django.db import transaction
-#from sharded.db.db_models import BucketCounter
+# from sharded.db.db_models import BucketCounter
 from time import time
 from random import randint
 from django.db import models
 from django.db.models import *
 
-
 NUM_BUCKETS = getattr(settings, 'NUM_BUCKETS', 2048)
 print("sharded.db.models.init: imports complete, NUM_BUCKETS=", NUM_BUCKETS)
 bucket_counts = {}
+
 
 class BucketCounter(models.Model):
     id = models.IntegerField(primary_key=True)
     counter = models.IntegerField(default=0)
 
-#    objects = models.Manager()
+    #    objects = models.Manager()
     def save(self, *args, **kwargs):
         print("sharded.db.models.init: BucketCounter #save: self, args, kwargs = ", self, args, kwargs)
         super(BucketCounter, self).save(*args, **kwargs)
 
+
 def get_counter(bucket_id):
     print("sharded.db.models.init: get_counter, bucketid: ", bucket_id)
-#    try:
-#        buck = BucketCounter.objects.get(id=bucket_id)
-#    except ObjectDoesNotExist:
-#    buck = BucketCounter(id=bucket_id, counter=0)
-#
-#    buck.counter = F('counter') + 1
-#
-#    if buck.counter > 1023:
-#        buck.counter = F('counter') % 1024
+    #    try:
+    #        buck = BucketCounter.objects.get(id=bucket_id)
+    #    except ObjectDoesNotExist:
+    #    buck = BucketCounter(id=bucket_id, counter=0)
+    #
+    #    buck.counter = F('counter') + 1
+    #
+    #    if buck.counter > 1023:
+    #        buck.counter = F('counter') % 1024
 
-#    buck.save()
+    #    buck.save()
     bucket_count = getattr(bucket_counts, 'bucket_id', 0)
     bucket_counts['bucket_id'] = bucket_count + 1
     print("sharded.db.models.init: get_counter, bucket.counter: ", bucket_count)
     return bucket_count
 
 
-
 def gen_id():
     time_stp = int((round(time() * 1000)))
-    print("sharded.db.models.init.gen_id, time=", time_stp)
-    u_id = time_stp << (64 - 41)
-    print("sharded.db.models.init.gen_id: id=", u_id)
-    bucket_id = randint(0, NUM_BUCKETS - 1)
-    print("sharded.db.models.init.gen_id: bucket_id=", bucket_id)
+    u_id = time_stp << (63 - 41)
+    bucket_id = randint(1, NUM_BUCKETS)
     u_id |= bucket_id << (64 - 41 - 13)
-    print("sharded.db.models.init.gen_id: id=", u_id)
     counter = get_counter(bucket_id)
-    print("sharded.db.models.init.gen_id: counter=", counter)
     u_id |= counter
-    print("sharded.db.models.init.gen_id: id=", u_id)
-    print("sharded.db.models.init: gen_id: ", bucket_id,
-          get_counter(bucket_id), u_id)
 
-    return {'u_id': u_id, 'bucket_id': bucket_id}
+    return bucket_id, u_id
+
+
+# def gen_id():
+#     # time_stp = int((round(time() * 1000)))
+#     # u_id = time_stp << (64 - 41)
+#     bucket_id = randint(1, NUM_BUCKETS + 1)
+#     u_id = bucket_id << 10
+#     counter = get_counter(bucket_id)
+#     u_id |= counter
+#
+#     return bucket_id, u_id
+
 
 class ShardedModelMixin(object):
     def __int__(self):  # define integer casting action
@@ -90,18 +94,21 @@ class ShardedModelMixin(object):
         return connections[self._state.db].cursor()
 
 
-
 class Sharded64Model(ShardedModelMixin, Model):
     print("sharded.db.models.init: Sharded64Model initializing")
-    id = BigIntegerField(primary_key=True, editable=False, default=gen_id()['u_id'])
-    bucket_id = BigIntegerField(editable=False, default=gen_id()['bucket_id'])
+    id = BigIntegerField(primary_key=True, editable=False)
+    bucket_id = BigIntegerField(editable=False)
 
     objects = ShardedManager()
 
     class Meta:
         abstract = True
 
-
+    def save(self, *args, **kwargs):
+        bucket_id, u_id = gen_id()
+        self.bucket_id = bucket_id
+        self.id = u_id
+        super(Sharded64Model, self).save(*args, **kwargs)
 
 
 ShardedModel = Sharded64Model
