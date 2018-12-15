@@ -78,20 +78,23 @@ class ShardedRouter(object):
 
     def db_for_read(self, model, **hints):
         if model._meta.db_table in self.sharded_tables:
+            bucket_id = None
             inst = getattr(hints, 'instance', False)
             if inst and inst._state.db:
                 return inst._state.db
             if not inst and getattr(hints, 'pk', False):
                 u_id = hints['pk']
                 bucket_id = id_to_bucket_id(u_id)
-                shard = bucket_to_shard(bucket_id)
-                return SHARDED_DB_PREFIX + str(shard).zfill(3)
             if Sharded64Model in model.mro():
                 # map bucket to shard
                 bucket_id = getattr(inst, 'bucket_id', False)
-                if bucket_id:
-                    shard = bucket_to_shard(bucket_id)
-                    return SHARDED_DB_PREFIX + str(shard).zfill(3)
+
+
+            if not bucket_id:
+                return None
+            shard = bucket_to_shard(bucket_id)
+            return SHARDED_DB_PREFIX + str(shard).zfill(3)
+
         return None
 
     def db_for_write(self, model, **hints):
