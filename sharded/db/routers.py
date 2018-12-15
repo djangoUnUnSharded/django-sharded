@@ -31,9 +31,7 @@ print(NUM_BUCKETS, BUCKET_DICT, SHARD_DICT)
 
 def create_bucket_dict():
     for bucket in range(1, NUM_BUCKETS):
-    for bucket in range(0, NUM_BUCKETS):
         shard = bucket % len(shards) + 1
-        print("sharded.db.router: shard, buck =", shard, bucket)
         BUCKET_DICT[bucket] = (shard, -1)
         if shard in SHARD_DICT:
             SHARD_DICT[shard].append(bucket)
@@ -42,7 +40,6 @@ def create_bucket_dict():
 
 
 def bucket_to_shard(bucket_id):
-    print("translating bucket to shard")
     if bucket_id >= NUM_BUCKETS or bucket_id < 0:
         raise Exception("Bucket out of bounds %d" % bucket_id)
     (num_old, num_new) = BUCKET_DICT[bucket_id]
@@ -50,10 +47,10 @@ def bucket_to_shard(bucket_id):
     new_db = num_new
     return db, new_db
 
+
 def id_to_bucket_id(u_id):
-    print("sharded.db.routers: #id_to_bucket_id: u_id = ", u_id)
     bucket_id = u_id
-    bucket_id =  bucket_id >> 10
+    bucket_id = bucket_id >> 10
     bucket_id = bucket_id & 0x1FFF
 
     return bucket_id
@@ -62,47 +59,43 @@ def id_to_bucket_id(u_id):
 class ShardedRouter(object):
     def __init__(self):
         print("sharded router init", self)
-        self.sharded_tables = set() # set of sharded tables
+        self.sharded_tables = set()  # set of sharded tables
         len_sharded_tables = -1
         while len_sharded_tables != len(self.sharded_tables):
             len_sharded_tables = len(self.sharded_tables)
             # for every model that is NOT in the set of sharded tables
-            for model in filter(lambda m: m._meta.db_table not in self.sharded_tables, apps.get_models(include_auto_created=True, include_deferred=True)):
+            for model in filter(lambda m: m._meta.db_table not in self.sharded_tables,
+                                apps.get_models(include_auto_created=True, include_deferred=True)):
                 for field in model._meta.get_fields(include_hidden=True):
                     # for every field that is in those models
                     # for field in model._meta.get_fields(include_hidden=True):
                     # if those fields are an instance of the sharded fields
                     if Sharded64Model in model.mro() or \
-                        (isinstance(field, (RelatedField,ForeignObjectRel)) and \
-                         (isinstance(field.related_model,
-                                     six.string_types)==False and field.related_model._meta.db_table
-                          in self.sharded_tables)):
+                            (isinstance(field, (RelatedField, ForeignObjectRel)) and
+                             (isinstance(field.related_model,
+                                         six.string_types) == False and field.related_model._meta.db_table
+                              in self.sharded_tables)):
                         self.sharded_tables.add(model._meta.db_table)
-        print("sharded.db.routers: #init: self.sharded_tables = ",
-              self.sharded_tables)
 
     def db_for_read(self, model, **hints):
-        print("sharded.db.routers: #for_read hints: ", hints)
         if model._meta.db_table in self.sharded_tables:
             inst = getattr(hints, 'instance', False)
             if inst and inst._state.db:
                 return inst._state.db
             if not inst and getattr(hints, 'pk', False):
                 u_id = hints['pk']
-                print("sharded.db.routers: #for_read: pk = ", u_id)
                 bucket_id = id_to_bucket_id(u_id)
                 shard = bucket_to_shard(bucket_id)
-                return SHARDED_DB_PREFIX +  str(shard).zfill(3)
+                return SHARDED_DB_PREFIX + str(shard).zfill(3)
             if Sharded64Model in model.mro():
                 # map bucket to shard
                 bucket_id = getattr(inst, 'bucket_id', False)
                 if bucket_id:
                     shard = bucket_to_shard(bucket_id)
-                    return SHARDED_DB_PREFIX +  str(shard).zfill(3)
+                    return SHARDED_DB_PREFIX + str(shard).zfill(3)
         return None
 
     def db_for_write(self, model, **hints):
-        print("sharded.db.routers: #for_write model hints: ", hints)
         if model._meta.db_table not in self.sharded_tables:
             return None
         if Sharded64Model in model.mro():
@@ -111,36 +104,27 @@ class ShardedRouter(object):
             except:
                 return None
             bucket_id = getattr(inst, 'bucket_id', False)
-            print("sharded.db.routers: #for_write: bucket_id", bucket_id)
             shard, new_shard = bucket_to_shard(bucket_id)
             # map bucket to shard
-#            print("sharded.db.routers: #forread: buck, shard, new_shard = ", bucket_id,
-#                  shard, new_shard)
+            #                  shard, new_shard)
             if new_shard >= 0: inst.save(using=SHARDED_DB_PREFIX +
-                                         str(new_shard).zfill(3))
-            return SHARDED_DB_PREFIX +  str(shard).zfill(3)
+                                               str(new_shard).zfill(3))
+            return SHARDED_DB_PREFIX + str(shard).zfill(3)
 
         for field in model._meta.get_fields(include_hidden=True):
-            print("sharded.db.routers: #for_write: field = ", field)
             if isinstance(field, (RelatedField, ForeignObjectRel)):
-                print("sharded.db.routers: #for_write: rel_field = ", field)
                 inst = hints['instance']
-                print("sharded.db.routers: #for_write: inst, hints = ", inst,
-                      hints)
                 if inst:
-                    print("sharded.db.routers: #for_write: inst, fieldname = ",
-                          inst, field.name)
-                    #TODO
+                    # TODO
                     u_id = getattr(inst, 'prof_id', "dickbutt")
-                    print("sharded.db.routers: #for_write: u_id = ", u_id)
                     bucket_id = id_to_bucket_id(u_id)
                     shard, new_shard = bucket_to_shard(bucket_id)
                     if new_shard >= 0: inst.save(using=SHARDED_DB_PREFIX +
-                                                     str(new_shard).zfill(3))
+                                                str(new_shard).zfill(3))
                     print("Saving %s into %s, %s" % (str(inst), shard, new_shard))
+                    return SHARDED_DB_PREFIX + str(shard).zfill(3)
 
         return None
-
 
     def allow_relation(self, obj1, obj2, **hints):
         print("allow relation? let's find out")
