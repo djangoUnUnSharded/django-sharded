@@ -41,7 +41,7 @@ def create_bucket_dict():
 def bucket_to_shard(bucket_id):
     if bucket_id >= NUM_BUCKETS or bucket_id < 0:
         raise Exception("Bucket out of bounds %d" % bucket_id)
-    (num_old, num_new) = BUCKET_DICT[bucket_id + 1 ]
+    (num_old, num_new) = BUCKET_DICT[bucket_id + 1]
     db = num_old
     new_db = num_new
     return db, new_db
