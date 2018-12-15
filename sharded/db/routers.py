@@ -26,7 +26,6 @@ print("beginning routers.py")
 NUM_BUCKETS = getattr(settings, 'NUM_BUCKETS', 2048) + 1
 BUCKET_DICT = {}
 SHARD_DICT = {}
-print(NUM_BUCKETS, BUCKET_DICT, SHARD_DICT)
 
 
 def create_bucket_dict():
@@ -42,7 +41,7 @@ def create_bucket_dict():
 def bucket_to_shard(bucket_id):
     if bucket_id >= NUM_BUCKETS or bucket_id < 0:
         raise Exception("Bucket out of bounds %d" % bucket_id)
-    (num_old, num_new) = BUCKET_DICT[bucket_id]
+    (num_old, num_new) = BUCKET_DICT[bucket_id + 1 ]
     db = num_old
     new_db = num_new
     return db, new_db
@@ -115,8 +114,11 @@ class ShardedRouter(object):
             if isinstance(field, (RelatedField, ForeignObjectRel)):
                 inst = hints['instance']
                 if inst:
-                    # TODO
+                    print("sharded.db.routers: #for_write: inst, fieldname = ",
+                          inst, field.name)
+                    #TODO
                     u_id = getattr(inst, 'prof_id', "dickbutt")
+                    print("sharded.db.routers: #for_write: u_id = ", u_id)
                     bucket_id = id_to_bucket_id(u_id)
                     shard, new_shard = bucket_to_shard(bucket_id)
                     if new_shard >= 0: inst.save(using=SHARDED_DB_PREFIX +

@@ -95,7 +95,6 @@ class ShardedModelMixin(object):
 
 
 class Sharded64Model(ShardedModelMixin, Model):
-    print("sharded.db.models.init: Sharded64Model initializing")
     id = BigIntegerField(primary_key=True, editable=False)
     bucket_id = BigIntegerField(editable=False)
 
