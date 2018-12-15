@@ -22,7 +22,6 @@ from sharded.db import models, SHARDED_DB_PREFIX, shards
 from sharded.db.models import Sharded64Model, ShardedModelMixin
 from sharded.exceptions import ShardCouldNotBeDetermined
 
-print("beginning routers.py")
 NUM_BUCKETS = getattr(settings, 'NUM_BUCKETS', 2048) + 1
 BUCKET_DICT = {}
 SHARD_DICT = {}
@@ -57,7 +56,6 @@ def id_to_bucket_id(u_id):
 
 class ShardedRouter(object):
     def __init__(self):
-        print("sharded router init", self)
         self.sharded_tables = set()  # set of sharded tables
         len_sharded_tables = -1
         while len_sharded_tables != len(self.sharded_tables):
@@ -114,22 +112,17 @@ class ShardedRouter(object):
             if isinstance(field, (RelatedField, ForeignObjectRel)):
                 inst = hints['instance']
                 if inst:
-                    print("sharded.db.routers: #for_write: inst, fieldname = ",
-                          inst, field.name)
                     #TODO
-                    u_id = getattr(inst, 'prof_id', "dickbutt")
-                    print("sharded.db.routers: #for_write: u_id = ", u_id)
+                    u_id = getattr(inst, 'prof_id', False)
                     bucket_id = id_to_bucket_id(u_id)
                     shard, new_shard = bucket_to_shard(bucket_id)
                     if new_shard >= 0: inst.save(using=SHARDED_DB_PREFIX +
                                                 str(new_shard).zfill(3))
-                    print("Saving %s into %s, %s" % (str(inst), shard, new_shard))
                     return SHARDED_DB_PREFIX + str(shard).zfill(3)
 
         return None
 
     def allow_relation(self, obj1, obj2, **hints):
-        print("allow relation? let's find out")
         if obj1._meta.db_table in self.sharded_tables and obj2._meta.db_table in self.sharded_tables:
             return True
         return None
