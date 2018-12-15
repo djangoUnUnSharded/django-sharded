@@ -38,7 +38,7 @@ def create_bucket_dict():
 
 
 def bucket_to_shard(bucket_id):
-    if bucket_id >= NUM_BUCKETS or bucket_id < 0:
+    if bucket_id > NUM_BUCKETS or bucket_id < 1:
         raise Exception("Bucket out of bounds %d" % bucket_id)
     (num_old, num_new) = BUCKET_DICT[bucket_id + 1]
     db = num_old
@@ -47,7 +47,7 @@ def bucket_to_shard(bucket_id):
 
 
 def id_to_bucket_id(u_id):
-    bucket_id = u_id
+    bucket_id = int(u_id)
     bucket_id = bucket_id >> 10
     bucket_id = bucket_id & 0x1FFF
 
@@ -101,6 +101,8 @@ class ShardedRouter(object):
             except:
                 return None
             bucket_id = getattr(inst, 'bucket_id', False)
+            if not bucket_id:
+                return None
             shard, new_shard = bucket_to_shard(bucket_id)
             # map bucket to shard
             #                  shard, new_shard)
@@ -114,6 +116,8 @@ class ShardedRouter(object):
                 if inst:
                     #TODO
                     u_id = getattr(inst, 'prof_id', False)
+                    if not u_id:
+                        return None
                     bucket_id = id_to_bucket_id(u_id)
                     shard, new_shard = bucket_to_shard(bucket_id)
                     if new_shard >= 0: inst.save(using=SHARDED_DB_PREFIX +
