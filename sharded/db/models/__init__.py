@@ -19,7 +19,7 @@ from django.conf import settings
 from django.db import connections
 from django.core.exceptions import ObjectDoesNotExist
 from sharded.db.models.manager import ShardedManager
-from sharded.db.models.query import ShardedQuerySet, ShardedValuesQuerySet, ShardedValuesListQuerySet
+from sharded.db.models.query import ShardedQuerySet
 from django.db import transaction
 # from sharded.db.db_models import BucketCounter
 from time import time
@@ -62,17 +62,6 @@ def gen_id():
     return bucket_id, u_id
 
 
-# def gen_id():
-#     # time_stp = int((round(time() * 1000)))
-#     # u_id = time_stp << (64 - 41)
-#     bucket_id = randint(1, NUM_BUCKETS + 1)
-#     u_id = bucket_id << 10
-#     counter = get_counter(bucket_id)
-#     u_id |= counter
-#
-#     return bucket_id, u_id
-
-
 class ShardedModelMixin(object):
     def __int__(self):  # define integer casting action
         return self.id
@@ -89,6 +78,8 @@ class Sharded64Model(ShardedModelMixin, Model):
 
     class Meta:
         abstract = True
+        base_manager_name = "objects"
+        default_manager_name = "objects"
 
     def save(self, *args, **kwargs):
         bucket_id, u_id = gen_id()

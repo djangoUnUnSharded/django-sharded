@@ -29,36 +29,46 @@ class ShardedQuerySetMixin(object):
             self._db = self.db
             return super(ShardedQuerySetMixin, self).iterator()
         except ShardCouldNotBeDetermined:
-            return chain(*[self._clone(_db=cnxn).iterator() for cnxn in self.connections])
+            # return chain(*[self._clone(_db=cnxn).iterator() for cnxn in self.connections])
+            iters = None
+            iters_arr = []
+            for shard in self.connections:
+                clone = self._clone(_db=shard)
+                clone_iter = clone.iterator()
+                iters_arr.append(clone_iter)
+            iters = chain(*iters_arr)
+            return iters
 
 
 class ShardedQuerySet(ShardedQuerySetMixin, query.QuerySet):
     def _filter_or_exclude(self, negate, *args, **kwargs):
-        print("sharded.db.models.query.ShardedQuerySet: filter or exclude: ", self)
         self._add_hints(**kwargs)
         return super(ShardedQuerySet, self)._filter_or_exclude(negate, *args, **kwargs)
 
     def count(self):
-        print("sharded.db.models.query.ShardedQuerySet: count", self)
         if self._result_cache is not None:
             return super(ShardedQuerySet, self).count()
         else:
             return sum([self.query.get_count(using=cnxn) for cnxn in self.connections])
 
     def values(self, *fields):
-        print("sharded.db.models.query.ShardedQuerySet: values", self, fields)
-        return super(ShardedQuerySet, self).values(*fields)._clone(klass=ShardedValuesQuerySet, setup=True,
-                                                                   _fields=fields)
+        clone = super(ShardedQuerySet, self)._values(*fields)
+        clone._iterable_class = ShardedValuesIterable
+        return clone
 
     def values_list(self, *fields, **kwargs):
-        print("sharded.db.models.query.ShardedQuerySet: values_list", self, fields)
-        return super(ShardedQuerySet, self).values_list(*fields, **kwargs)._clone(klass=ShardedValuesListQuerySet,
-                                                                                  setup=True, _fields=fields)
+        clone = super(ShardedQuerySet, self).values_list(*fields, **kwargs)
+        clone._iterable_class = ShardedFlatValuesListIterable if kwargs.get('flat', False) else ShardedValuesListIterable
+        return clone
 
 
-class ShardedValuesQuerySet(ShardedQuerySetMixin, query.ValuesQuerySet):
+class ShardedValuesIterable(ShardedQuerySetMixin, query.ValuesIterable):
     pass
 
 
-class ShardedValuesListQuerySet(ShardedQuerySetMixin, query.ValuesListQuerySet):
+class ShardedValuesListIterable(ShardedQuerySetMixin, query.ValuesListIterable):
+    pass
+
+
+class ShardedFlatValuesListIterable(ShardedQuerySetMixin, query.FlatValuesListIterable):
     pass
