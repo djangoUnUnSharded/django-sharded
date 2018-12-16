@@ -30,7 +30,7 @@ SHARD_DICT = {}
 def create_bucket_dict():
     for bucket in range(1, NUM_BUCKETS):
         shard = bucket % len(shards) + 1
-        BUCKET_DICT[bucket] = (shard, -1)
+        BUCKET_DICT[bucket] = [shard, -1]
         if shard in SHARD_DICT:
             SHARD_DICT[shard].append(bucket)
         else:
@@ -40,7 +40,7 @@ def create_bucket_dict():
 def bucket_to_shard(bucket_id):
     if bucket_id > NUM_BUCKETS or bucket_id < 1:
         raise Exception("Bucket out of bounds %d" % bucket_id)
-    (num_old, num_new) = BUCKET_DICT[bucket_id + 1]
+    num_old, num_new = BUCKET_DICT[bucket_id]
     db = num_old
     new_db = num_new
     return db, new_db
@@ -105,7 +105,6 @@ class ShardedRouter(object):
                 return None
             shard, new_shard = bucket_to_shard(bucket_id)
             # map bucket to shard
-            #                  shard, new_shard)
             if new_shard >= 0: inst.save(using=SHARDED_DB_PREFIX +
                                                str(new_shard).zfill(3))
             return SHARDED_DB_PREFIX + str(shard).zfill(3)
