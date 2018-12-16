@@ -79,36 +79,54 @@ class ShardedRouter(object):
     def db_for_read(self, model, **hints):
         if model._meta.db_table not in self.sharded_tables:
             return None
+        pk_name = model._meta.pk.name
+        pk = None
         bucket_id = None
-        inst = None
-        if Sharded64Model in model.mro():
-            try:
-                inst = hints['instance']
-                bucket_id = getattr(inst, 'bucket_id', False)
-            except:
-                raise ShardCouldNotBeDetermined(
-                    'Could not determine shard for "%s.%s" model' % (model._meta.app_label, model._meta.model_name))
-        else:
-            # for field in model._meta.get_fields(include_hidden=True):
-                # if isinstance(field, (RelatedField, ForeignObjectRel)):
-                #     inst = hints['instance']
-                    # if inst:
-            prof = getattr(hints, 'prof_id', False)
-            if not prof:
-                raise ShardCouldNotBeDetermined(
-                    'Could not determine shard for "%s.%s" model' % (
-                        model._meta.app_label, model._meta.model_name))
-            u_id = prof.id
-            bucket_id = id_to_bucket_id(u_id)
+        # inst = None
+        # if Sharded64Model in model.mro():
+        #     try:
+        #         inst = hints['instance']
+        #         bucket_id = getattr(inst, 'bucket_id', False)
+        #     except:
+        #         raise ShardCouldNotBeDetermined(
+        #             'Could not determine shard for "%s.%s" model' % (model._meta.app_label, model._meta.model_name))
+        # else:
+        #     # for field in model._meta.get_fields(include_hidden=True):
+        #         # if isinstance(field, (RelatedField, ForeignObjectRel)):
+        #         #     inst = hints['instance']
+        #             # if inst:
+        #     prof = getattr(getattr(hints, 'instance', hints), pk_name, False)
+        #     if not prof:
+        #         raise ShardCouldNotBeDetermined(
+        #             'Could not determine shard for "%s.%s" model' % (
+        #                 model._meta.app_label, model._meta.model_name))
+        #     u_id = prof.id
+        #     bucket_id = id_to_bucket_id(u_id)
 
+        try:
+            inst = hints['instance']
+            if not inst:
+                pk = hints[pk_name]
+            else:
+                pk = inst[pk_name]
+        except:
+            pk = None
+
+        bucket_id = id_to_bucket_id(pk) if pk else False
+
+        if not bucket_id:
+            raise ShardCouldNotBeDetermined(
+                'Could not determine shard for "%s.%s" model' % (
+                    model._meta.app_label, model._meta.model_name))
         shard, new_shard = bucket_to_shard(bucket_id)
-        print("Saving %s into %s, %s" % (str(inst), shard, new_shard))
+        print("Saving %s into %s, %s" % (str(model), shard, new_shard))
         return SHARDED_DB_PREFIX + str(shard).zfill(3)
 
     def db_for_write(self, model, **hints):
         if model._meta.db_table not in self.sharded_tables:
             return None
         bucket_id = None
+        pk_name = model._meta.pk.name
         inst = None
         if Sharded64Model in model.mro():
             try:
@@ -117,18 +135,14 @@ class ShardedRouter(object):
             except:
                 raise ShardCouldNotBeDetermined(
                     'Could not determine shard for "%s.%s" model' % (model._meta.app_label, model._meta.model_name))
-            # shard, new_shard = bucket_to_shard(bucket_id)
-            # # map bucket to shard
-            # #                  shard, new_shard)
-            # if new_shard >= 0:
-            #     inst.save(using=SHARDED_DB_PREFIX + str(new_shard).zfill(3))
-            # return SHARDED_DB_PREFIX + str(shard).zfill(3)
         else:
             for field in model._meta.get_fields(include_hidden=True):
                 if isinstance(field, (RelatedField, ForeignObjectRel)):
                     inst = hints['instance']
                     if inst:
-                        u_id = getattr(inst, 'prof_id', False)
+                        field_name = field.attname
+                        related_sharded_obj = getattr(inst, field_name, False)
+                        u_id = getattr(related_sharded_obj, pk_name, False)
                         if not u_id:
                             raise ShardCouldNotBeDetermined(
                                 'Could not determine shard for "%s.%s" model' % (
@@ -136,8 +150,6 @@ class ShardedRouter(object):
                         bucket_id = id_to_bucket_id(u_id)
 
         shard, new_shard = bucket_to_shard(bucket_id)
-        # map bucket to shard
-        #                  shard, new_shard)
         if new_shard >= 0:
             inst.save(using=SHARDED_DB_PREFIX +
                             str(new_shard).zfill(3))
