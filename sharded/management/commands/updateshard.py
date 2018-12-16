@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+""" Bucketing by usage may be supported in a future release
+    As of now it's not currently supported"""
+
 from django.core.management.base import BaseCommand
 from django.db import connections
 from sharded import models
