@@ -72,9 +72,8 @@ class ShardedRouter(object):
                     # if those fields are an instance of the sharded fields
                     if Sharded64Model in model.mro() or \
                             (isinstance(field, (RelatedField, ForeignObjectRel)) and
-                             (isinstance(field.related_model,
-                                         six.string_types) == False and field.related_model._meta.db_table
-                              in self.sharded_tables)):
+                             not (isinstance(field.related_model, six.string_types) and
+                                  field.related_model._meta.db_table in self.sharded_tables)):
                         self.sharded_tables.add(model._meta.db_table)
 
     def db_for_read(self, model, **hints):
@@ -83,26 +82,6 @@ class ShardedRouter(object):
         pk_name = model._meta.pk.name
         pk = None
         bucket_id = None
-        # inst = None
-        # if Sharded64Model in model.mro():
-        #     try:
-        #         inst = hints['instance']
-        #         bucket_id = getattr(inst, 'bucket_id', False)
-        #     except:
-        #         raise ShardCouldNotBeDetermined(
-        #             'Could not determine shard for "%s.%s" model' % (model._meta.app_label, model._meta.model_name))
-        # else:
-        #     # for field in model._meta.get_fields(include_hidden=True):
-        #         # if isinstance(field, (RelatedField, ForeignObjectRel)):
-        #         #     inst = hints['instance']
-        #             # if inst:
-        #     prof = getattr(getattr(hints, 'instance', hints), pk_name, False)
-        #     if not prof:
-        #         raise ShardCouldNotBeDetermined(
-        #             'Could not determine shard for "%s.%s" model' % (
-        #                 model._meta.app_label, model._meta.model_name))
-        #     u_id = prof.id
-        #     bucket_id = id_to_bucket_id(u_id)
 
         try:
             inst = hints['instance']
@@ -156,7 +135,6 @@ class ShardedRouter(object):
                             str(new_shard).zfill(3))
         print("Saving %s into %s, %s" % (str(inst), shard, new_shard))
         return SHARDED_DB_PREFIX + str(shard).zfill(3)
-
 
     def allow_relation(self, obj1, obj2, **hints):
         print("allow relation? let's find out")
