@@ -13,14 +13,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from random import randint
-# from sharded.db.db_models import BucketCounter
-from time import time
 
 from django.db.models import *
-
+from django.conf import settings
+from django.db import connections
+from django.core.exceptions import ObjectDoesNotExist
 from sharded.db.models.manager import ShardedManager
 from sharded.db.models.query import ShardedQuerySet
+from django.db import transaction
+# from sharded.db.db_models import BucketCounter
+from time import time
+from random import randint
+from django.db import models
+from django.db.models import *
 
 NUM_BUCKETS = getattr(settings, 'NUM_BUCKETS', 2048)
 print("sharded.db.models.init: imports complete, NUM_BUCKETS=", NUM_BUCKETS)
