@@ -16,6 +16,5 @@ limitations under the License.
 
 from django.db.utils import ConnectionDoesNotExist
 
-
 class ShardCouldNotBeDetermined(ConnectionDoesNotExist):
     pass
