@@ -16,15 +16,7 @@ limitations under the License.
 
 
 from django.conf import settings
-print("sharded.db.init: imported settings: ", settings.DATABASES,
-      settings.DATABASE_ROUTERS)
-#for name in dir(settings):
-#    print name, getattr(settings, name)
 from django.db import connections, DEFAULT_DB_ALIAS
-print("sharded.db.init: imported other shit: connections:",
-      connections.databases, connections)
 
 SHARDED_DB_PREFIX = getattr(settings, 'SHARDED_DB_PREFIX', 'shard_')
-
 shards = sorted(filter(lambda cnxn: cnxn.startswith(SHARDED_DB_PREFIX), connections))
-print("sharded.db.init: ",SHARDED_DB_PREFIX, shards)

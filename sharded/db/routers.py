@@ -44,6 +44,8 @@ def bucket_to_shard(bucket_id):
     (num_old, num_new) = BUCKET_DICT[bucket_id + 1]
     db = num_old
     new_db = num_new
+    print("Routing bucket %s to shards %s, %s", bucket_id, db, new_db)
+
     return db, new_db
 
 
@@ -57,7 +59,6 @@ def id_to_bucket_id(u_id):
 
 class ShardedRouter(object):
     def __init__(self):
-        print("sharded router init", self)
         self.sharded_tables = set()  # set of sharded tables
         len_sharded_tables = -1
         while len_sharded_tables != len(self.sharded_tables):

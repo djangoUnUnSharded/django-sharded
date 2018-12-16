@@ -62,17 +62,6 @@ def gen_id():
     return bucket_id, u_id
 
 
-# def gen_id():
-#     # time_stp = int((round(time() * 1000)))
-#     # u_id = time_stp << (64 - 41)
-#     bucket_id = randint(1, NUM_BUCKETS + 1)
-#     u_id = bucket_id << 10
-#     counter = get_counter(bucket_id)
-#     u_id |= counter
-#
-#     return bucket_id, u_id
-
-
 class ShardedModelMixin(object):
     def __int__(self):  # define integer casting action
         return self.id
