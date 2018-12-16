@@ -29,7 +29,15 @@ class ShardedQuerySetMixin(object):
             self._db = self.db
             return super(ShardedQuerySetMixin, self).iterator()
         except ShardCouldNotBeDetermined:
-            return chain(*[self._clone(_db=cnxn).iterator() for cnxn in self.connections])
+            # return chain(*[self._clone(_db=cnxn).iterator() for cnxn in self.connections])
+            iters = None
+            iters_arr = []
+            for shard in self.connections:
+                clone = self._clone(_db=shard)
+                clone_iter = clone.iterator()
+                iters_arr.append(clone_iter)
+            iters = chain(*iters_arr)
+            return iters
 
 
 class ShardedQuerySet(ShardedQuerySetMixin, query.QuerySet):
