@@ -24,7 +24,6 @@ class BaseShardedManager(BaseManager):
     
     @classmethod
     def from_queryset(cls, queryset_class, class_name=None):
-        print("sharded.db.models.manager: getting from_queryset")
         return super(BaseShardedManager, cls).from_queryset(queryset_class, class_name=class_name)
 #    def get_queryset(self):
 #        print("sharded.db.models.manager: mod, db, hints =", self.model, self._db,self._hints)

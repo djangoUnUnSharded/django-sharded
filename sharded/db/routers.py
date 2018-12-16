@@ -64,7 +64,7 @@ class ShardedRouter(object):
             len_sharded_tables = len(self.sharded_tables)
             # for every model that is NOT in the set of sharded tables
             for model in filter(lambda m: m._meta.db_table not in self.sharded_tables,
-                                apps.get_models(include_auto_created=True, include_deferred=True)):
+                                apps.get_models(include_auto_created=True)):
                 for field in model._meta.get_fields(include_hidden=True):
                     # for every field that is in those models
                     # for field in model._meta.get_fields(include_hidden=True):
