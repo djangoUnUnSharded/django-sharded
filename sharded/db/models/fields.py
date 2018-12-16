@@ -39,26 +39,21 @@ class Sharded64Field(fields.AutoField, fields.BigIntegerField):
     description = _("BigInteger with shard id and timestamp encoded")
 
     def __init__(self, *args, **kwargs):
-        print("sharded.db.models.fields: initializing 64field")
         kwargs['primary_key'] = True
         super(Sharded64Field, self).__init__(*args, **kwargs)
 
     def db_type_suffix(self, connection):
-        print("sharded.db.models.fields: getting db_type_suffix")
         return 'DEFAULT next_id64()'
 
     def get_internal_type(self):
-        print("sharded.db.models.fields: getting internal type")
         return fields.BigIntegerField.get_internal_type(self)
 
     def to_python(self, value):
-        print("sharded.db.models.fields: to_python")
         return fields.BigIntegerField.to_python(self, value)
 
 #NOTE: Must subclass ForeignKey, OneToOneField and ManyToManyField because django.db.models.fields.related:1981
 class ShardedForeignObjectMixin(object):
     def db_type(self, connection):
-        print("sharded.db.models.fields: db_type for ShardedForeignObjectMixin")
 
         rel_field = self.related_field
         if isinstance(rel_field, (Sharded32Field,Sharded64Field)):
@@ -73,7 +68,6 @@ class OneToOneField(ShardedForeignObjectMixin, fields.related.OneToOneField):
 
 class SingleRelatedObjectDescriptorReturnsNone(fields.related.SingleRelatedObjectDescriptor):
     def __get__(self, instance, instance_type=None):
-        print("sharded.db.models.fields: getting SingleRelatedObjectDescriptorReturnsNone")
         try:
             return super(SingleRelatedObjectDescriptorReturnsNone, self).__get__(instance, instance_type=instance_type)
         except ObjectDoesNotExist:

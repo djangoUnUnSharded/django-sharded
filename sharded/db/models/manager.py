@@ -19,16 +19,11 @@ from sharded.db.models.query import ShardedQuerySet
 
 class BaseShardedManager(BaseManager):
     def __iter__(self):
-        print("sharded.db.models.manager: iterating over BaseShardedManager")
         return self.all().__iter__()
     
     @classmethod
     def from_queryset(cls, queryset_class, class_name=None):
         return super(BaseShardedManager, cls).from_queryset(queryset_class, class_name=class_name)
-#    def get_queryset(self):
-#        print("sharded.db.models.manager: mod, db, hints =", self.model, self._db,self._hints)
-#        self._hints['prof_id'] = 1
-#        return self._queryset_class(self.model, using=self._db, hints=self._hints)
 
 
 class ShardedManager(BaseShardedManager.from_queryset(ShardedQuerySet)):

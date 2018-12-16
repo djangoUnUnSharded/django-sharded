@@ -28,12 +28,10 @@ from django.db import models
 from django.db.models import *
 
 NUM_BUCKETS = getattr(settings, 'NUM_BUCKETS', 2048)
-print("sharded.db.models.init: imports complete, NUM_BUCKETS=", NUM_BUCKETS)
 bucket_counts = {}
 
 
 def get_counter(bucket_id):
-    print("sharded.db.models.init: get_counter, bucketid: ", bucket_id)
     #    try:
     #        buck = BucketCounter.objects.get(id=bucket_id)
     #    except ObjectDoesNotExist:
@@ -47,7 +45,6 @@ def get_counter(bucket_id):
     #    buck.save()
     bucket_count = getattr(bucket_counts, 'bucket_id', 0)
     bucket_counts['bucket_id'] = bucket_count + 1
-    print("sharded.db.models.init: get_counter, bucket.counter: ", bucket_count)
     return bucket_count
 
 

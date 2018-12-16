@@ -22,7 +22,6 @@ from sharded.db import models, SHARDED_DB_PREFIX, shards
 from sharded.db.models import Sharded64Model, ShardedModelMixin
 from sharded.exceptions import ShardCouldNotBeDetermined
 
-print("beginning routers.py")
 NUM_BUCKETS = getattr(settings, 'NUM_BUCKETS', 2048) + 1
 BUCKET_DICT = {}
 SHARD_DICT = {}
@@ -159,7 +158,6 @@ class ShardedRouter(object):
 
 
     def allow_relation(self, obj1, obj2, **hints):
-        print("allow relation? let's find out")
         if obj1._meta.db_table in self.sharded_tables and obj2._meta.db_table in self.sharded_tables:
             return True
         return None

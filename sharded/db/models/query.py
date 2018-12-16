@@ -24,7 +24,6 @@ class ShardedQuerySetMixin(object):
     connections = shards
 
     def iterator(self):
-        print("sharded.db.models.query: iterating over ShardedQuerySetMixin")
         try:
             self._db = self.db
             return super(ShardedQuerySetMixin, self).iterator()
