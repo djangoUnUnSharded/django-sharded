@@ -82,26 +82,6 @@ class ShardedRouter(object):
         pk_name = model._meta.pk.name
         pk = None
         bucket_id = None
-        # inst = None
-        # if Sharded64Model in model.mro():
-        #     try:
-        #         inst = hints['instance']
-        #         bucket_id = getattr(inst, 'bucket_id', False)
-        #     except:
-        #         raise ShardCouldNotBeDetermined(
-        #             'Could not determine shard for "%s.%s" model' % (model._meta.app_label, model._meta.model_name))
-        # else:
-        #     # for field in model._meta.get_fields(include_hidden=True):
-        #         # if isinstance(field, (RelatedField, ForeignObjectRel)):
-        #         #     inst = hints['instance']
-        #             # if inst:
-        #     prof = getattr(getattr(hints, 'instance', hints), pk_name, False)
-        #     if not prof:
-        #         raise ShardCouldNotBeDetermined(
-        #             'Could not determine shard for "%s.%s" model' % (
-        #                 model._meta.app_label, model._meta.model_name))
-        #     u_id = prof.id
-        #     bucket_id = id_to_bucket_id(u_id)
 
         try:
             inst = hints['instance']
