@@ -108,11 +108,15 @@ class ShardedRouter(object):
             if not inst:
                 pk = hints[pk_name]
             else:
-                pk = inst[pk_name]
+                pk = getattr(inst, pk_name, None)
         except:
             pk = None
 
         bucket_id = id_to_bucket_id(pk) if pk else False
+        # last minute hack: we encountered a bug where the most
+        # significant bit of our ID would be flipped during query
+        if bucket_id > NUM_BUCKETS and hasattr(inst, 'bucket_id'):
+            bucket_id = getattr(inst, 'bucket_id')
 
         if not bucket_id:
             raise ShardCouldNotBeDetermined(
@@ -143,6 +147,11 @@ class ShardedRouter(object):
             if new_shard >= 0: inst.save(using=SHARDED_DB_PREFIX +
                                                str(new_shard).zfill(3))
             return SHARDED_DB_PREFIX + str(shard).zfill(3)
+        else:
+            try:
+                inst = hints['instance']
+                if hasattr(inst, '')
+            except:
 
         shard, new_shard = bucket_to_shard(bucket_id)
         if new_shard >= 0:

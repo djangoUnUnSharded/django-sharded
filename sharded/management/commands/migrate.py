@@ -25,24 +25,24 @@ class Command(migrate.Command):
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
         parser.add_argument("--all-shards", action="store_true", default=False, help="Migrate all the sharded databases.")
-        parser.add_argument("--no-initshard", action="store_true", default=False, help="Do not call initshard.")
+        # parser.add_argument("--no-initshard", action="store_true", default=False, help="Do not call initshard.")
 #        parser.add_argument("--buckets", action="store_true", default=DEFAULT_BUCKET_NUM, help="Do not call initshard.")
     
     def handle(self, **options):
         db = options.pop('database')
         migrate_all = options.pop('all_shards')
-        no_initshard = options.pop('no_initshard')
+        # no_initshard = options.pop('no_initshard')
         if db == DEFAULT_DB_ALIAS and migrate_all == True:
             cnxns = sorted(shards) + ['default',]
             for cnxn in cnxns:
 
                 self.stdout.write(self.style.MIGRATE_HEADING("Migrating '" + cnxn + "' database"))
-                if not no_initshard:
-                    call_command('initshard', database=cnxn)
+                # if not no_initshard:
+                #     call_command('initshard', database=cnxn)
                 super(Command, self).handle(database=cnxn, **options)
         else:
             if migrate_all:
                 self.stdout.write(self.style.NOTICE("warning: --all-shards is ignored when --database is used."))
-            if not no_initshard:
-                call_command('initshard', database=db)
+            # if not no_initshard:
+            #     call_command('initshard', database=db)
             super(Command, self).handle(database=db, **options)

@@ -20,8 +20,8 @@ from django.utils.encoding import python_2_unicode_compatible
 from sharded.db import SHARDED_DB_PREFIX
 
 
-class MigrationCommandModel(Model):
-    id = DateTimeField(auto_now=True)
+class MigrationCommand(Model):
+    time = DateTimeField(auto_now=True)
     command = TextField(primary_key=True)
     complete = BooleanField(default=False)
 
