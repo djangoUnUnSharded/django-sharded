@@ -30,7 +30,7 @@ SHARD_DICT = {}
 def create_bucket_dict():
     for bucket in range(1, NUM_BUCKETS):
         shard = bucket % len(shards) + 1
-        BUCKET_DICT[bucket] = (shard, -1)
+        BUCKET_DICT[bucket] = [shard, -1]
         if shard in SHARD_DICT:
             SHARD_DICT[shard].append(bucket)
         else:
@@ -40,7 +40,7 @@ def create_bucket_dict():
 def bucket_to_shard(bucket_id):
     if bucket_id > NUM_BUCKETS or bucket_id < 1:
         raise Exception("Bucket out of bounds %d" % bucket_id)
-    (num_old, num_new) = BUCKET_DICT[bucket_id]
+    num_old, num_new = BUCKET_DICT[bucket_id]
     db = num_old
     new_db = num_new
     print("Routing bucket %s to shards %s, %s", bucket_id, db, new_db)
@@ -88,11 +88,15 @@ class ShardedRouter(object):
             if not inst:
                 pk = hints[pk_name]
             else:
-                pk = inst[pk_name]
+                pk = getattr(inst, pk_name, None)
         except:
             pk = None
 
         bucket_id = id_to_bucket_id(pk) if pk else False
+        # last minute hack: we encountered a bug where the most
+        # significant bit of our ID would be flipped during query
+        if bucket_id > NUM_BUCKETS and hasattr(inst, 'bucket_id'):
+            bucket_id = getattr(inst, 'bucket_id')
 
         if not bucket_id:
             raise ShardCouldNotBeDetermined(
@@ -113,21 +117,21 @@ class ShardedRouter(object):
                 inst = hints['instance']
                 bucket_id = getattr(inst, 'bucket_id', False)
             except:
-                raise ShardCouldNotBeDetermined(
-                    'Could not determine shard for "%s.%s" model' % (model._meta.app_label, model._meta.model_name))
+                return None
+            bucket_id = getattr(inst, 'bucket_id', False)
+            if not bucket_id:
+                return None
+            shard, new_shard = bucket_to_shard(bucket_id)
+            # map bucket to shard
+            #                  shard, new_shard)
+            if new_shard >= 0: inst.save(using=SHARDED_DB_PREFIX +
+                                               str(new_shard).zfill(3))
+            return SHARDED_DB_PREFIX + str(shard).zfill(3)
         else:
-            for field in model._meta.get_fields(include_hidden=True):
-                if isinstance(field, (RelatedField, ForeignObjectRel)):
-                    inst = hints['instance']
-                    if inst:
-                        field_name = field.attname
-                        related_sharded_obj = getattr(inst, field_name, False)
-                        u_id = getattr(related_sharded_obj, pk_name, False)
-                        if not u_id:
-                            raise ShardCouldNotBeDetermined(
-                                'Could not determine shard for "%s.%s" model' % (
-                                    model._meta.app_label, model._meta.model_name))
-                        bucket_id = id_to_bucket_id(u_id)
+            try:
+                inst = hints['instance']
+                if hasattr(inst, '')
+            except:
 
         shard, new_shard = bucket_to_shard(bucket_id)
         if new_shard >= 0:
