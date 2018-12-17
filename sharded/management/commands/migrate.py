@@ -26,8 +26,7 @@ class Command(migrate.Command):
         super(Command, self).add_arguments(parser)
         parser.add_argument("--all-shards", action="store_true", default=False, help="Migrate all the sharded databases.")
         # parser.add_argument("--no-initshard", action="store_true", default=False, help="Do not call initshard.")
-#        parser.add_argument("--buckets", action="store_true", default=DEFAULT_BUCKET_NUM, help="Do not call initshard.")
-    
+
     def handle(self, **options):
         db = options.pop('database')
         migrate_all = options.pop('all_shards')

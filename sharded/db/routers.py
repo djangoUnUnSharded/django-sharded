@@ -62,12 +62,10 @@ class ShardedRouter(object):
         len_sharded_tables = -1
         while len_sharded_tables != len(self.sharded_tables):
             len_sharded_tables = len(self.sharded_tables)
-            # for every model that is NOT in the set of sharded tables
             for model in filter(lambda m: m._meta.db_table not in self.sharded_tables,
                                 apps.get_models(include_auto_created=True)):
                 for field in model._meta.get_fields(include_hidden=True):
                     # for every field that is in those models
-                    # for field in model._meta.get_fields(include_hidden=True):
                     # if those fields are an instance of the sharded fields
                     if Sharded64Model in model.mro() or \
                             (isinstance(field, (RelatedField, ForeignObjectRel)) and
@@ -80,9 +78,7 @@ class ShardedRouter(object):
         if model._meta.db_table not in self.sharded_tables:
             return None
         pk_name = model._meta.pk.name
-        pk = None
-        bucket_id = None
-
+        inst = None
         try:
             inst = hints['instance']
             if not inst:
@@ -93,6 +89,7 @@ class ShardedRouter(object):
             pk = None
 
         bucket_id = id_to_bucket_id(pk) if pk else False
+
         # last minute hack: we encountered a bug where the most
         # significant bit of our ID would be flipped during query
         if bucket_id > NUM_BUCKETS and hasattr(inst, 'bucket_id'):
@@ -115,15 +112,12 @@ class ShardedRouter(object):
         if Sharded64Model in model.mro():
             try:
                 inst = hints['instance']
-                bucket_id = getattr(inst, 'bucket_id', False)
             except:
                 return None
             bucket_id = getattr(inst, 'bucket_id', False)
             if not bucket_id:
                 return None
             shard, new_shard = bucket_to_shard(bucket_id)
-            # map bucket to shard
-            #                  shard, new_shard)
             if new_shard >= 0: inst.save(using=SHARDED_DB_PREFIX +
                                                str(new_shard).zfill(3))
             return SHARDED_DB_PREFIX + str(shard).zfill(3)
@@ -141,7 +135,7 @@ class ShardedRouter(object):
                                     model._meta.app_label, model._meta.model_name))
                         bucket_id = id_to_bucket_id(u_id)
 
-        # Dirty hack for msb flipping upon ShardedModel read somewhere
+        # Dirty hack for msb flipping upon ShardedModel read
         if bucket_id > NUM_BUCKETS and hasattr(inst, 'bucket_id'):
             bucket_id = getattr(inst, 'bucket_id', None)
         shard, new_shard = bucket_to_shard(bucket_id)
@@ -151,8 +145,7 @@ class ShardedRouter(object):
         print("Saving %s into %s, %s" % (str(inst), shard, new_shard))
         return SHARDED_DB_PREFIX + str(shard).zfill(3)
 
-
     def allow_relation(self, obj1, obj2, **hints):
-        if obj1._meta.db_table in self.sharded_tables and obj2._meta.db_table in self.sharded_tables:
+        if obj1._meta.db_table in self.sharded_tables and obj2._meta.db_table in self.sharded_tables and obj1._meta.db_table == obj2._meta.db_table:
             return True
         return None
