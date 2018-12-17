@@ -93,6 +93,8 @@ class ShardedRouter(object):
             pk = None
 
         bucket_id = id_to_bucket_id(pk) if pk else False
+        if bucket_id > NUM_BUCKETS and hasattr(inst, 'bucket_id'):
+            bucket_id = getattr(inst, 'bucket_id')
 
         if not bucket_id:
             raise ShardCouldNotBeDetermined(
@@ -117,18 +119,21 @@ class ShardedRouter(object):
                     'Could not determine shard for "%s.%s" model' % (model._meta.app_label, model._meta.model_name))
         else:
             for field in model._meta.get_fields(include_hidden=True):
-                if isinstance(field, (RelatedField, ForeignObjectRel)):
-                    inst = hints['instance']
-                    if inst:
+                if isinstance(field, (RelatedField, ForeignObjectRel)) and Sharded64Model in field.related_model.mro():
+                    hint_inst = hints['instance']
+                    if hint_inst:
                         field_name = field.attname
-                        related_sharded_obj = getattr(inst, field_name, False)
-                        u_id = getattr(related_sharded_obj, pk_name, False)
+                        inst = getattr(hint_inst, field_name, False)
+                        u_id = getattr(inst, pk_name, False)
                         if not u_id:
                             raise ShardCouldNotBeDetermined(
                                 'Could not determine shard for "%s.%s" model' % (
                                     model._meta.app_label, model._meta.model_name))
                         bucket_id = id_to_bucket_id(u_id)
 
+        # Dirty hack for msb flipping upon ShardedModel read somewhere
+        if bucket_id > NUM_BUCKETS and hasattr(inst, 'bucket_id'):
+            bucket_id = getattr(inst, 'bucket_id', None)
         shard, new_shard = bucket_to_shard(bucket_id)
         if new_shard >= 0:
             inst.save(using=SHARDED_DB_PREFIX +
